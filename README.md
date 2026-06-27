@@ -4,6 +4,17 @@
 
 Nombre: Jimmy LLica
 
+> **Nota:** El workflow de autograding (`classroom.yml`) no se completa exitosamente debido a un problema de compatibilidad con la versión actual de Docker en los runners de GitHub Actions. El comando definido en el workflow es:
+> ```
+> docker build -t "APICliente" .
+> ```
+> Las versiones recientes de Docker (27+), que utilizan **BuildKit** como builder por defecto, **requieren que los tags de imágenes sean completamente en minúsculas**. El tag `"APICliente"` contiene letras mayúsculas, lo que produce el error:
+> ```
+> ERROR: failed to build: invalid tag "APICliente": repository name must be lowercase
+> ```
+> Este error no está relacionado con el código del proyecto (el cual compila correctamente), sino con la restricción de Docker. La solución sería cambiar el tag a `"apicliente"` en el archivo `classroom.yml`, pero dicho archivo no debe ser modificado según las indicaciones del laboratorio.
+
+
 ## OBJETIVOS
   * Comprender el funcionamiento de una aplicación que consume una base de datos relacional contenerizada.
 

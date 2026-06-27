@@ -23,7 +23,12 @@ public partial class BdClientesContext : DbContext
     public virtual DbSet<TiposDocumento> TiposDocumentos { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer("ClienteDB");
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer("ClienteDB");
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

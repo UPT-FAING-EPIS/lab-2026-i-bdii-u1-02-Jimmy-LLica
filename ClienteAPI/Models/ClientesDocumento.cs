@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace ClienteAPI.Models;
 
@@ -11,7 +12,9 @@ public partial class ClientesDocumento
 
     public string NumDocumento { get; set; } = null!;
 
+    [JsonIgnore]
     public virtual Cliente IdClienteNavigation { get; set; } = null!;
 
+    [JsonIgnore]
     public virtual TiposDocumento IdTipoDocumentoNavigation { get; set; } = null!;
 }

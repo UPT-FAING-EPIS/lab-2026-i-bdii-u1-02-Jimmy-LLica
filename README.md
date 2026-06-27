@@ -2,7 +2,7 @@
 [![Open in Codespaces](https://classroom.github.com/assets/launch-codespace-2972f46106e565e64193e422d61a12cf1da4916b45550586e14ef0a7c637dd04.svg)](https://classroom.github.com/open-in-codespaces?assignment_repo_id=23713601)
 # SESION DE LABORATORIO N° 02: Consumiendo datos de una base de datos Microsoft SQL Server
 
-Nombre:
+Nombre: Jimmy LLica
 
 ## OBJETIVOS
   * Comprender el funcionamiento de una aplicación que consume una base de datos relacional contenerizada.
@@ -207,3 +207,274 @@ docker-compose up -d
 ## Actividades Encargadas
 1. Escribir el código necesrio para completar los controladores para las clases Cliente y ClientesDocumento.
 
+---
+## Respuesta - Actividad 1
+
+Se crearon los controladores API REST completos para las clases **Cliente** y **ClientesDocumento**, siguiendo el mismo patrón utilizado por el controlador `TiposDocumentosController` generado en el laboratorio.
+
+### Controlador ClientesController
+
+Archivo: `ClienteAPI/Controllers/ClientesController.cs`
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ClienteAPI.Data;
+using ClienteAPI.Models;
+
+namespace ClienteAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ClientesController : ControllerBase
+    {
+        private readonly BdClientesContext _context;
+
+        public ClientesController(BdClientesContext context)
+        {
+            _context = context;
+        }
+
+        // GET: api/Clientes
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Cliente>>> GetClientes()
+        {
+            return await _context.Clientes.ToListAsync();
+        }
+
+        // GET: api/Clientes/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Cliente>> GetCliente(int id)
+        {
+            var cliente = await _context.Clientes.FindAsync(id);
+
+            if (cliente == null)
+            {
+                return NotFound();
+            }
+
+            return cliente;
+        }
+
+        // PUT: api/Clientes/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutCliente(int id, Cliente cliente)
+        {
+            if (id != cliente.IdCliente)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(cliente).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ClienteExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // POST: api/Clientes
+        [HttpPost]
+        public async Task<ActionResult<Cliente>> PostCliente(Cliente cliente)
+        {
+            _context.Clientes.Add(cliente);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction("GetCliente", new { id = cliente.IdCliente }, cliente);
+        }
+
+        // DELETE: api/Clientes/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteCliente(int id)
+        {
+            var cliente = await _context.Clientes.FindAsync(id);
+            if (cliente == null)
+            {
+                return NotFound();
+            }
+
+            _context.Clientes.Remove(cliente);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool ClienteExists(int id)
+        {
+            return _context.Clientes.Any(e => e.IdCliente == id);
+        }
+    }
+}
+```
+
+### Controlador ClientesDocumentosController
+
+Archivo: `ClienteAPI/Controllers/ClientesDocumentosController.cs`
+
+Este controlador maneja la tabla `CLIENTES_DOCUMENTOS` que tiene una **llave primaria compuesta** (ID_CLIENTE, ID_TIPO_DOCUMENTO), por lo que las rutas GET, PUT y DELETE reciben ambos parámetros.
+
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ClienteAPI.Data;
+using ClienteAPI.Models;
+
+namespace ClienteAPI.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ClientesDocumentosController : ControllerBase
+    {
+        private readonly BdClientesContext _context;
+
+        public ClientesDocumentosController(BdClientesContext context)
+        {
+            _context = context;
+        }
+
+        // GET: api/ClientesDocumentos
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<ClientesDocumento>>> GetClientesDocumentos()
+        {
+            return await _context.ClientesDocumentos.ToListAsync();
+        }
+
+        // GET: api/ClientesDocumentos/5/1
+        [HttpGet("{idCliente}/{idTipoDocumento}")]
+        public async Task<ActionResult<ClientesDocumento>> GetClientesDocumento(int idCliente, byte idTipoDocumento)
+        {
+            var clientesDocumento = await _context.ClientesDocumentos.FindAsync(idCliente, idTipoDocumento);
+
+            if (clientesDocumento == null)
+            {
+                return NotFound();
+            }
+
+            return clientesDocumento;
+        }
+
+        // PUT: api/ClientesDocumentos/5/1
+        [HttpPut("{idCliente}/{idTipoDocumento}")]
+        public async Task<IActionResult> PutClientesDocumento(int idCliente, byte idTipoDocumento, ClientesDocumento clientesDocumento)
+        {
+            if (idCliente != clientesDocumento.IdCliente || idTipoDocumento != clientesDocumento.IdTipoDocumento)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(clientesDocumento).State = EntityState.Modified;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!ClientesDocumentoExists(idCliente, idTipoDocumento))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        // POST: api/ClientesDocumentos
+        [HttpPost]
+        public async Task<ActionResult<ClientesDocumento>> PostClientesDocumento(ClientesDocumento clientesDocumento)
+        {
+            _context.ClientesDocumentos.Add(clientesDocumento);
+
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                if (ClientesDocumentoExists(clientesDocumento.IdCliente, clientesDocumento.IdTipoDocumento))
+                {
+                    return Conflict();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return CreatedAtAction("GetClientesDocumento", new { idCliente = clientesDocumento.IdCliente, idTipoDocumento = clientesDocumento.IdTipoDocumento }, clientesDocumento);
+        }
+
+        // DELETE: api/ClientesDocumentos/5/1
+        [HttpDelete("{idCliente}/{idTipoDocumento}")]
+        public async Task<IActionResult> DeleteClientesDocumento(int idCliente, byte idTipoDocumento)
+        {
+            var clientesDocumento = await _context.ClientesDocumentos.FindAsync(idCliente, idTipoDocumento);
+            if (clientesDocumento == null)
+            {
+                return NotFound();
+            }
+
+            _context.ClientesDocumentos.Remove(clientesDocumento);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        private bool ClientesDocumentoExists(int idCliente, byte idTipoDocumento)
+        {
+            return _context.ClientesDocumentos.Any(e => e.IdCliente == idCliente && e.IdTipoDocumento == idTipoDocumento);
+        }
+    }
+}
+```
+
+### Endpoints disponibles
+
+| Controlador | Método | Ruta | Descripción |
+|---|---|---|---|
+| ClientesController | GET | `/api/Clientes` | Listar todos los clientes |
+| ClientesController | GET | `/api/Clientes/{id}` | Obtener un cliente por ID |
+| ClientesController | POST | `/api/Clientes` | Crear un nuevo cliente |
+| ClientesController | PUT | `/api/Clientes/{id}` | Actualizar un cliente |
+| ClientesController | DELETE | `/api/Clientes/{id}` | Eliminar un cliente |
+| ClientesDocumentosController | GET | `/api/ClientesDocumentos` | Listar todos los documentos |
+| ClientesDocumentosController | GET | `/api/ClientesDocumentos/{idCliente}/{idTipoDoc}` | Obtener un documento por clave compuesta |
+| ClientesDocumentosController | POST | `/api/ClientesDocumentos` | Crear un nuevo documento |
+| ClientesDocumentosController | PUT | `/api/ClientesDocumentos/{idCliente}/{idTipoDoc}` | Actualizar un documento |
+| ClientesDocumentosController | DELETE | `/api/ClientesDocumentos/{idCliente}/{idTipoDoc}` | Eliminar un documento |
+
+### Comando para generar los controladores (referencia)
+
+Los controladores se generaron con el siguiente patrón (similar al paso 15 del laboratorio):
+
+```bash
+dotnet aspnet-codegenerator controller -name ClientesController -async -api -m Cliente -dc BdClientesContext -outDir Controllers
+dotnet aspnet-codegenerator controller -name ClientesDocumentosController -async -api -m ClientesDocumento -dc BdClientesContext -outDir Controllers
+```
